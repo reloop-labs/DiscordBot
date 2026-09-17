@@ -1,0 +1,102 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: commit sha to deploy (already built, or built now)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  build-push:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha: ${{ steps.version.outputs.sha }}
+    steps:
+      - id: version
+        run: echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+        env:
+          SHA: ${{ inputs.sha || github.sha }}
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.version.outputs.sha }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/reloop-labs/loop:${{ steps.version.outputs.sha }}
+            ${{ github.event_name == 'push' && 'ghcr.io/reloop-labs/loop:latest' || '' }}
+
+  deploy:
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    permissions:
+      packages: write
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: point the production tag at this sha
+        run: docker buildx imagetools create -t "ghcr.io/reloop-labs/loop:production" "ghcr.io/reloop-labs/loop:${SHA}"
+        env:
+          SHA: ${{ needs.build-push.outputs.sha }}
+
+      - name: restart the panel server
+        run: |
+          api() {
+            curl -fsS -X "$1" "${PANEL_URL%/}/api/client/servers/${SERVER_ID}$2" \
+              -H "Authorization: Bearer ${CLIENT_KEY}" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              "${@:3}"
+          }
+          api POST /power -d '{"signal":"restart"}'
+          echo "restart requested"
+          for _ in $(seq 1 60); do
+            sleep 5
+            state="$(api GET /resources | python3 -c 'import sys,json; print(json.load(sys.stdin)["attributes"]["current_state"])')"
+            echo "state: $state"
+            if [ "$state" = "running" ]; then
+              echo "loop is running sha ${SHA}"
+              exit 0
+            fi
+          done
+          echo "server did not reach running within 5 minutes"
+          exit 1
+        env:
+          PANEL_URL: ${{ secrets.PTERO_PANEL_URL }}
+          CLIENT_KEY: ${{ secrets.PTERO_CLIENT_KEY }}
+          SERVER_ID: ${{ secrets.PTERO_SERVER_ID }}
+          SHA: ${{ needs.build-push.outputs.sha }}

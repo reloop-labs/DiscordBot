@@ -1,0 +1,1 @@
+ALTER TABLE "reports" ADD COLUMN "staff_channel_id" bigint;

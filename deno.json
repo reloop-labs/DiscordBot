@@ -1,0 +1,42 @@
+{
+	"nodeModulesDir": "auto",
+	"tasks": {
+		"dev": "deno run --watch --allow-net --allow-env --allow-read=./data --allow-write=./data --env-file src/main.ts",
+		"start": "deno run --allow-net --allow-env --allow-read=./data --allow-write=./data src/main.ts",
+		"check": "deno check src scripts tests",
+		"test": "deno test --allow-env --allow-net --allow-read --allow-write",
+		"db:generate": "deno run -A npm:drizzle-kit@0.31.10 generate",
+		"db:migrate": "deno run --allow-net --allow-env --allow-read=./drizzle --env-file scripts/migrate.ts",
+		"db:migrate:prod": "deno run --allow-net --allow-env --allow-read=./drizzle scripts/migrate.ts",
+		"discord:commands": "deno run --allow-net --allow-env --env-file scripts/register-commands.ts"
+	},
+	"imports": {
+		"@discordeno/bot": "npm:@discordeno/bot@21.0.0",
+		"@std/assert": "jsr:@std/assert@^1.0.19",
+		"@std/path": "jsr:@std/path@^1.1.6",
+		"@std/testing": "jsr:@std/testing@^1.0.20",
+		"drizzle-kit": "npm:drizzle-kit@0.31.10",
+		"drizzle-orm": "npm:drizzle-orm@0.45.2",
+		"postgres": "npm:postgres@3.4.9",
+		"redis": "npm:redis@6.2.1",
+		"zod": "npm:zod@4.6.5"
+	},
+	"compilerOptions": {
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": false,
+		"lib": ["deno.ns", "deno.window", "dom"]
+	},
+	"fmt": {
+		"useTabs": true,
+		"lineWidth": 100,
+		"indentWidth": 2,
+		"singleQuote": false,
+		"exclude": ["drizzle/", "node_modules/", "data/"]
+	},
+	"lint": {
+		"rules": { "tags": ["recommended"] },
+		"exclude": ["drizzle/", "node_modules/", "data/"]
+	},
+	"exclude": ["node_modules/", "data/"]
+}

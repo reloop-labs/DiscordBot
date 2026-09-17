@@ -1,0 +1,122 @@
+{
+	"_comment": "Pterodactyl egg for Loop, the Reloop community Discord bot",
+	"meta": {
+		"version": "PTDL_v2",
+		"update_url": null
+	},
+	"exported_at": "2026-09-17T00:00:00+00:00",
+	"name": "Loop",
+	"author": "hello@reloop.sh",
+	"description": "Reloop community Discord bot. Runs the published image; code is not stored in the server volume.",
+	"features": null,
+	"docker_images": {
+		"ghcr.io/reloop-labs/loop:production": "ghcr.io/reloop-labs/loop:production"
+	},
+	"file_denylist": [],
+	"startup": "bash /app/start.sh",
+	"config": {
+		"files": "{}",
+		"startup": "{\"done\": \"\\\"message\\\":\\\"gateway ready\\\"\"}",
+		"logs": "{}",
+		"stop": "^C"
+	},
+	"scripts": {
+		"installation": {
+			"script": "#!/bin/bash\nmkdir -p /mnt/server/data/transcripts\necho \"data directory ready\"\n",
+			"container": "ghcr.io/parkervcp/installers:debian",
+			"entrypoint": "bash"
+		}
+	},
+	"variables": [
+		{
+			"name": "DISCORD_TOKEN",
+			"description": "Bot token from the Discord developer portal.",
+			"env_variable": "DISCORD_TOKEN",
+			"default_value": "",
+			"user_viewable": true,
+			"user_editable": true,
+			"rules": "required|string|min:50",
+			"field_type": "text"
+		},
+		{
+			"name": "DISCORD_APPLICATION_ID",
+			"description": "Application id from the Discord developer portal.",
+			"env_variable": "DISCORD_APPLICATION_ID",
+			"default_value": "",
+			"user_viewable": true,
+			"user_editable": true,
+			"rules": "required|string|regex:/^\\d{17,20}$/",
+			"field_type": "text"
+		},
+		{
+			"name": "DATABASE_URL",
+			"description": "postgres://user:password@<postgres server uuid>:<port>/loop",
+			"env_variable": "DATABASE_URL",
+			"default_value": "",
+			"user_viewable": true,
+			"user_editable": true,
+			"rules": "required|string|starts_with:postgres",
+			"field_type": "text"
+		},
+		{
+			"name": "REDIS_URL",
+			"description": "redis://:password@<redis server uuid>:<port>",
+			"env_variable": "REDIS_URL",
+			"default_value": "",
+			"user_viewable": true,
+			"user_editable": true,
+			"rules": "required|string|starts_with:redis",
+			"field_type": "text"
+		},
+		{
+			"name": "ENVIRONMENT",
+			"description": "production, development or test",
+			"env_variable": "ENVIRONMENT",
+			"default_value": "production",
+			"user_viewable": true,
+			"user_editable": true,
+			"rules": "required|string|in:production,development,test",
+			"field_type": "text"
+		},
+		{
+			"name": "LOG_LEVEL",
+			"description": "debug, info, warn or error",
+			"env_variable": "LOG_LEVEL",
+			"default_value": "info",
+			"user_viewable": true,
+			"user_editable": true,
+			"rules": "required|string|in:debug,info,warn,error",
+			"field_type": "text"
+		},
+		{
+			"name": "PORT",
+			"description": "Internal health server port (loopback only).",
+			"env_variable": "PORT",
+			"default_value": "8080",
+			"user_viewable": true,
+			"user_editable": true,
+			"rules": "required|integer|between:1024,65535",
+			"field_type": "text"
+		},
+		{
+			"name": "TRANSCRIPT_DIR",
+			"description": "Where ticket transcripts are written.",
+			"env_variable": "TRANSCRIPT_DIR",
+			"default_value": "/home/container/data/transcripts",
+			"user_viewable": true,
+			"user_editable": false,
+			"rules": "required|string",
+			"field_type": "text"
+		},
+		{
+			"name": "HEALTH_HOST",
+			"description": "Health server bind address.",
+			"env_variable": "HEALTH_HOST",
+			"default_value": "127.0.0.1",
+			"user_viewable": true,
+			"user_editable": false,
+			"rules": "required|string",
+			"field_type": "text"
+		}
+	]
+}

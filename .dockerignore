@@ -1,0 +1,12 @@
+*
+!deno.json
+!deno.lock
+!src
+!scripts/migrate.ts
+!drizzle
+**/.env
+**/.env.*
+**/node_modules
+**/*.log
+!pterodactyl/entrypoint.sh
+!pterodactyl/start.sh
