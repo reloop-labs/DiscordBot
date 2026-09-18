@@ -1,4 +1,5 @@
 import type { LoopBot } from "../bot.ts";
+import { avatarUrl } from "@discordeno/bot";
 import { toMemberSnapshot } from "../adapters/discordeno-api.ts";
 import type { RaidService } from "../../domains/automod/raid-service.ts";
 import type { MemberService } from "../../domains/members/member-service.ts";
@@ -30,6 +31,7 @@ export function attachMemberEvents(bot: LoopBot, deps: MemberEventDeps): void {
 				user.id,
 				user.username,
 				members.cached(guildId, user.id)?.roleIds ?? null,
+				avatarUrl(user.id, user.discriminator, { avatar: user.avatar }),
 			);
 		} catch (error) {
 			logger.error("guild member remove failed", { guildId, userId: user.id, error });

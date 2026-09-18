@@ -23,7 +23,14 @@ export const desiredProperties = {
 		permissions: true,
 		toggles: true,
 	},
-	guild: { id: true, name: true, ownerId: true, roles: true, toggles: true },
+	guild: {
+		id: true,
+		name: true,
+		ownerId: true,
+		roles: true,
+		toggles: true,
+		approximateMemberCount: true,
+	},
 	role: {
 		id: true,
 		guildId: true,

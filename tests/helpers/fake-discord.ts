@@ -62,6 +62,7 @@ export function guild(): GuildSnapshot {
 		id: GUILD_ID,
 		name: "Reloop",
 		ownerId: OWNER_ID,
+		memberCount: 1204,
 		roles: [
 			role(EVERYONE_ROLE, "@everyone", 0),
 			role(MEMBER_ROLE, "Member", 1),

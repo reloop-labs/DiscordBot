@@ -8,6 +8,7 @@ import type {
 } from "../../discord/adapters/discord-api.ts";
 import { DiscordLogService, LOG_COLORS } from "../../discord/logging/discord-log.ts";
 import type { Logger } from "../../logging/logger.ts";
+import type { CardInput, WelcomeCardRenderer } from "./welcome-card.ts";
 import { assertCanManageRole } from "../../permissions/hierarchy.ts";
 import { isLoopError } from "../../shared/errors.ts";
 import { formatDuration } from "../../shared/duration.ts";
@@ -51,6 +52,7 @@ export class MemberService {
 		private readonly config: GuildConfigService,
 		private readonly discordLog: DiscordLogService,
 		private readonly logger: Logger,
+		private readonly cards: WelcomeCardRenderer | null = null,
 	) {}
 
 	cached(guildId: bigint, userId: bigint): MemberCacheEntry | null {
@@ -82,13 +84,23 @@ export class MemberService {
 			}
 			if (settings.persistRoles) await this.restore(member, context);
 			if (settings.welcomeChannelId) {
+				const server = context?.guild.name ?? "this server";
+				const count = memberCount ?? context?.guild.memberCount ?? undefined;
 				await this.announce(
 					settings.welcomeChannelId,
 					renderTemplate(settings.welcomeMessage ?? DEFAULT_WELCOME, {
 						userId: member.userId,
 						username: member.username,
-						server: context?.guild.name ?? "this server",
-						memberCount,
+						server,
+						memberCount: count,
+					}),
+					await this.card({
+						kind: "welcome",
+						displayName: member.displayName,
+						username: member.username,
+						serverName: server,
+						avatarUrl: member.avatarUrl,
+						memberCount: count,
 					}),
 				);
 			}
@@ -112,8 +124,8 @@ export class MemberService {
 		userId: bigint,
 		username: string,
 		roleIds: bigint[] | null,
+		avatarUrl: string | null = null,
 	): Promise<void> {
-		this.forget(guildId, userId);
 		const settings = await this.config.get(guildId);
 		if (settings.persistRoles && roleIds) {
 			const context = await this.roleContext(guildId);
@@ -131,15 +143,21 @@ export class MemberService {
 				});
 		}
 		if (settings.leaveChannelId) {
+			const server = (await this.roleContext(guildId))?.guild.name ?? "this server";
+			const cached = this.cached(guildId, userId);
 			await this.announce(
 				settings.leaveChannelId,
-				renderTemplate(settings.leaveMessage ?? DEFAULT_LEAVE, {
-					userId,
+				renderTemplate(settings.leaveMessage ?? DEFAULT_LEAVE, { userId, username, server }),
+				await this.card({
+					kind: "leave",
+					displayName: cached?.nick ?? username,
 					username,
-					server: (await this.roleContext(guildId))?.guild.name ?? "this server",
+					serverName: server,
+					avatarUrl,
 				}),
 			);
 		}
+		this.forget(guildId, userId);
 		await this.discordLog.embed(guildId, "leaves", {
 			title: "Member left",
 			color: LOG_COLORS.neutral,
@@ -239,10 +257,29 @@ export class MemberService {
 		await this.db.delete(memberPersistedRoles).where(where);
 	}
 
-	private async announce(channelId: bigint, content: string): Promise<void> {
-		if (!content) return;
+	private async card(input: CardInput): Promise<Uint8Array | null> {
+		if (!this.cards) return null;
 		try {
-			await this.api.sendMessage(channelId, { content: truncate(content, 2000) });
+			return await this.cards.render(input);
+		} catch (error) {
+			this.logger.warn("card render failed", { kind: input.kind, error });
+			return null;
+		}
+	}
+
+	private async announce(
+		channelId: bigint,
+		content: string,
+		image: Uint8Array | null = null,
+	): Promise<void> {
+		if (!content && !image) return;
+		try {
+			await this.api.sendMessage(channelId, {
+				content: truncate(content, 2000),
+				files: image
+					? [{ blob: new Blob([image as BlobPart], { type: "image/png" }), name: "card.png" }]
+					: undefined,
+			});
 		} catch (error) {
 			this.logger.warn("member announcement failed", { channelId, error });
 		}

@@ -85,11 +85,12 @@ export function createDiscordenoApi(bot: LoopBot): DiscordApi {
 
 		getGuild: (guildId) =>
 			orNull(async (): Promise<GuildSnapshot> => {
-				const guild = await h.getGuild(guildId);
+				const guild = await h.getGuild(guildId, { counts: true });
 				return {
 					id: guild.id,
 					name: guild.name,
 					ownerId: guild.ownerId,
+					memberCount: guild.approximateMemberCount ?? null,
 					roles: [...guild.roles.values()].map((role) => ({
 						id: role.id,
 						name: role.name,

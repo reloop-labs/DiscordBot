@@ -7,6 +7,7 @@ import { AutomodService } from "../domains/automod/engine.ts";
 import { RaidService } from "../domains/automod/raid-service.ts";
 import { GuildConfigService } from "../domains/guild-config/service.ts";
 import { MemberService } from "../domains/members/member-service.ts";
+import { WelcomeCardRenderer } from "../domains/members/welcome-card.ts";
 import { ReportService } from "../domains/reports/report-service.ts";
 import { RoleMenuService } from "../domains/roles/role-menu-service.ts";
 import { SuggestionService } from "../domains/suggestions/suggestion-service.ts";
@@ -72,6 +73,7 @@ export function buildContainer(
 		config,
 		discordLog,
 		logger.child({ component: "members" }),
+		new WelcomeCardRenderer(env.ASSETS_DIR, logger.child({ component: "cards" })),
 	);
 	const roleMenus = new RoleMenuService(api, db, audit, logger.child({ component: "rolemenus" }));
 	const reports = new ReportService({

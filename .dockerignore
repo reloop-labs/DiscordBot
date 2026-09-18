@@ -4,6 +4,7 @@
 !src
 !scripts/migrate.ts
 !drizzle
+!assets
 **/.env
 **/.env.*
 **/node_modules

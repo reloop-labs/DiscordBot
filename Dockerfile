@@ -10,6 +10,7 @@ RUN deno install --frozen
 COPY src ./src
 COPY scripts/migrate.ts ./scripts/migrate.ts
 COPY drizzle ./drizzle
+COPY assets ./assets
 
 RUN deno check src scripts
 
@@ -19,7 +20,8 @@ FROM denoland/deno:2.9.7 AS runtime
 ENV DENO_DIR=/deno-dir \
     DENO_NO_UPDATE_CHECK=1 \
     TRANSCRIPT_DIR=/home/container/data/transcripts \
-    HEALTH_HOST=127.0.0.1
+    HEALTH_HOST=127.0.0.1 \
+    ASSETS_DIR=/app/assets
 
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends iproute2 ca-certificates \

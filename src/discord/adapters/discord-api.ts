@@ -29,6 +29,7 @@ export interface GuildSnapshot {
 	name: string;
 	ownerId: bigint;
 	roles: RoleSnapshot[];
+	memberCount: number | null;
 }
 
 export interface MemberSnapshot {
