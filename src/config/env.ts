@@ -6,6 +6,10 @@ const schema = z.object({
 	DISCORD_TOKEN: z.string().min(50, "must be a bot token"),
 	DISCORD_APPLICATION_ID: snowflake,
 	DISCORD_DEV_GUILD_ID: snowflake.optional(),
+	DISCORD_REGISTER_COMMANDS: z.string().regex(
+		/^(global|guild:\d{17,20}|off)$/,
+		"must be global, guild:<id> or off",
+	).default("guild:1390212514658123836"),
 	DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
 	REDIS_URL: z.url({ protocol: /^rediss?$/ }),
 	PORT: z.coerce.number().int().min(1).max(65535).default(8080),
@@ -13,12 +17,14 @@ const schema = z.object({
 	LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 	ENVIRONMENT: z.enum(["development", "production", "test"]).default("development"),
 	TRANSCRIPT_DIR: z.string().min(1).default("./data/transcripts"),
+	ASSETS_DIR: z.string().min(1).default("./assets"),
 });
 
 export type Env = z.infer<typeof schema>;
 
 export function loadEnv(source: Record<string, string | undefined> = Deno.env.toObject()): Env {
-	const result = schema.safeParse(source);
+	const present = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ""));
+	const result = schema.safeParse(present);
 	if (!result.success) {
 		const issues = result.error.issues.map((issue) =>
 			`  ${issue.path.join(".")}: ${issue.message}`

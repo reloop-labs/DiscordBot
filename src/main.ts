@@ -70,5 +70,21 @@ lifecycle.onShutdown("discord gateway", async () => {
 });
 lifecycle.listenForSignals();
 
+if (env.DISCORD_REGISTER_COMMANDS !== "off") {
+	const definitions = commands.commands.map((command) => command.definition);
+	const target = env.DISCORD_REGISTER_COMMANDS;
+	try {
+		const registered = target === "global"
+			? await bot.helpers.upsertGlobalApplicationCommands(definitions)
+			: await bot.helpers.upsertGuildApplicationCommands(
+				target.slice("guild:".length),
+				definitions,
+			);
+		logger.info("application commands registered", { target, count: registered.length });
+	} catch (error) {
+		logger.error("application command registration failed", { target, error });
+	}
+}
+
 logger.info("starting gateway", { applicationId: env.DISCORD_APPLICATION_ID });
 await bot.start();

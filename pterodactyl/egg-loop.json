@@ -7,13 +7,14 @@
 	"exported_at": "2026-09-17T00:00:00+00:00",
 	"name": "Loop",
 	"author": "hello@reloop.sh",
-	"description": "Reloop community Discord bot. Runs the published image; code is not stored in the server volume.",
+	"description": "Reloop community Discord bot. Runs from the published image, or from sources uploaded to the server volume on the Debian image.",
 	"features": null,
 	"docker_images": {
-		"ghcr.io/reloop-labs/loop:production": "ghcr.io/reloop-labs/loop:production"
+		"ghcr.io/reloop-labs/loop:production": "ghcr.io/reloop-labs/loop:production",
+		"ghcr.io/parkervcp/yolks:debian": "ghcr.io/parkervcp/yolks:debian"
 	},
 	"file_denylist": [],
-	"startup": "bash /app/start.sh",
+	"startup": "if [ -f start.sh ]; then bash start.sh; else bash /app/start.sh; fi",
 	"config": {
 		"files": "{}",
 		"startup": "{\"done\": \"\\\"message\\\":\\\"gateway ready\\\"\"}",
@@ -46,6 +47,16 @@
 			"user_viewable": true,
 			"user_editable": true,
 			"rules": "required|string|regex:/^\\d{17,20}$/",
+			"field_type": "text"
+		},
+		{
+			"name": "DISCORD_REGISTER_COMMANDS",
+			"description": "Register slash commands at startup: global, or guild:<guild id> for instant updates in one server. Leave empty to skip.",
+			"env_variable": "DISCORD_REGISTER_COMMANDS",
+			"default_value": "",
+			"user_viewable": true,
+			"user_editable": true,
+			"rules": "nullable|string|regex:/^(global)?(guild:\\d{17,20})?$/",
 			"field_type": "text"
 		},
 		{

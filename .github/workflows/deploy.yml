@@ -76,11 +76,22 @@ jobs:
       - name: restart the panel server
         run: |
           api() {
-            curl -fsS -X "$1" "${PANEL_URL%/}/api/client/servers/${SERVER_ID}$2" \
+            local out status
+            out="$(mktemp)"
+            status="$(curl -sS -o "$out" -w '%{http_code}' -X "$1" "${PANEL_URL%/}/api/client/servers/${SERVER_ID}$2" \
               -H "Authorization: Bearer ${CLIENT_KEY}" \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \
-              "${@:3}"
+              -H "User-Agent: loop-deploy" \
+              "${@:3}")"
+            if [ "${status#2}" = "$status" ]; then
+              echo "panel returned HTTP $status for $1 $2"
+              head -c 600 "$out" | tr -d '\r' | sed 's/<[^>]*>//g' | grep -v '^\s*$' | head -8
+              rm -f "$out"
+              return 1
+            fi
+            cat "$out"
+            rm -f "$out"
           }
           api POST /power -d '{"signal":"restart"}'
           echo "restart requested"

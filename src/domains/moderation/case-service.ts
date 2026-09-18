@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, lte, sql } from "drizzle-orm";
 import type { Database, Transaction } from "../../database/client.ts";
 import { nextSequence } from "../../database/sequences.ts";
 import {
@@ -155,7 +155,8 @@ export class CaseService {
 			.where(
 				and(
 					eq(moderationCases.status, "active"),
-					sql`${moderationCases.expiresAt} is not null and ${moderationCases.expiresAt} <= ${now}`,
+					isNotNull(moderationCases.expiresAt),
+					lte(moderationCases.expiresAt, now),
 				),
 			)
 			.returning();

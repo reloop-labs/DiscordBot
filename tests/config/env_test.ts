@@ -38,3 +38,32 @@ Deno.test("secrets include token and connection passwords", () => {
 	assertEquals(secrets.includes("redispass"), true);
 	assertEquals(secrets.includes(valid.DISCORD_TOKEN), true);
 });
+
+Deno.test("command registration target is validated", () => {
+	assertEquals(
+		loadEnv({ ...valid, DISCORD_REGISTER_COMMANDS: "global" }).DISCORD_REGISTER_COMMANDS,
+		"global",
+	);
+	assertEquals(
+		loadEnv({ ...valid, DISCORD_REGISTER_COMMANDS: "guild:1390212514658123836" })
+			.DISCORD_REGISTER_COMMANDS,
+		"guild:1390212514658123836",
+	);
+	assertThrows(
+		() => loadEnv({ ...valid, DISCORD_REGISTER_COMMANDS: "yes" }),
+		Error,
+		"DISCORD_REGISTER_COMMANDS",
+	);
+});
+
+Deno.test("empty values count as unset", () => {
+	const env = loadEnv({
+		...valid,
+		DISCORD_REGISTER_COMMANDS: "",
+		DISCORD_DEV_GUILD_ID: "",
+		LOG_LEVEL: "",
+	});
+	assertEquals(env.DISCORD_REGISTER_COMMANDS, "guild:1390212514658123836");
+	assertEquals(env.DISCORD_DEV_GUILD_ID, undefined);
+	assertEquals(env.LOG_LEVEL, "info");
+});

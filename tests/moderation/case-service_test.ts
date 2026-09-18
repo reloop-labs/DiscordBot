@@ -70,3 +70,22 @@ dbTest("staff notes soft delete by prefix", async (db, guildId) => {
 	assertEquals((await cases.staffNotes(guildId, TARGET_ID)).length, 0);
 	assertEquals(await cases.deleteStaffNoteByPrefix(guildId, "zz", MOD_ID), false);
 });
+
+dbTest("timed cases expire once their deadline passes", async (db, guildId) => {
+	const cases = new CaseService(db);
+	const timed = await cases.create({
+		guildId,
+		action: "timeout",
+		targetUserId: TARGET_ID,
+		moderatorUserId: MOD_ID,
+		reason: "x",
+		durationMs: 1000,
+	});
+	assertEquals(
+		(await cases.expireDue(new Date(Date.now() - 1))).some((c) => c.id === timed.id),
+		false,
+	);
+	const expired = await cases.expireDue(new Date(Date.now() + 5000));
+	assertEquals(expired.some((c) => c.id === timed.id), true);
+	assertEquals((await cases.getByNumber(guildId, timed.caseNumber)).status, "expired");
+});
